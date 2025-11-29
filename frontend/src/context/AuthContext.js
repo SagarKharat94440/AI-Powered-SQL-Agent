@@ -1,7 +1,6 @@
-// AuthContext.js - Context for managing authentication state
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { login as apiLogin, logout as apiLogout, getUser, isAuthenticated } from "../utils/api";
+import { useNavigate, Navigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
@@ -62,9 +61,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Update user data
+  // Update user data and set logged in state
   const updateUser = (userData) => {
     setUser(userData);
+    setIsLoggedIn(true);
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
@@ -89,9 +89,7 @@ export const ProtectedRoute = ({ children }) => {
   }
 
   if (!isLoggedIn) {
-    // Redirect to login or show login component
-    window.location.href = "/login";
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   return children;

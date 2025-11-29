@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { saveTokens } from "../../utils/api";
 import "./Auth.css";
 
 export default function Signup() {
@@ -16,6 +18,7 @@ export default function Signup() {
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,7 +63,7 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch("http://localhost:8080/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,8 +81,15 @@ export default function Signup() {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Registration successful - redirect to login
-      navigate("/login");
+      // Auto-login: Save tokens and user data
+      saveTokens(data.token, data.refreshToken);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        updateUser(data.user);
+      }
+
+      // Redirect to home page (dashboard)
+      navigate("/");
     } catch (err) {
       setError(err.message || "An error occurred during registration");
       console.error("Signup error:", err);
@@ -230,9 +240,9 @@ export default function Signup() {
           </button>
         </form>
 
-        <div className="auth-divider">
+        {/* <div className="auth-divider">
           <span>or sign up with</span>
-        </div>
+        </div> */}
 
         {/* <div className="social-buttons">
           <button className="social-button google">

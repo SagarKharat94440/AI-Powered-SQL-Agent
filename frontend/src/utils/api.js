@@ -1,6 +1,6 @@
 // api.js - Utility functions for API calls with JWT
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "http://localhost:8080";
 
 // Get token from localStorage
 export const getToken = () => {
@@ -110,7 +110,8 @@ export const refreshAccessToken = async () => {
     }
 
     const data = await response.json();
-    saveTokens(data.accessToken, data.refreshToken);
+    // Backend sends 'token', not 'accessToken'
+    saveTokens(data.token, data.refreshToken);
     return true;
   } catch (error) {
     console.error("Token refresh error:", error);
@@ -134,8 +135,8 @@ export const login = async (email, password) => {
     throw new Error(data.message || "Login failed");
   }
 
-  // Save tokens and user data
-  saveTokens(data.accessToken, data.refreshToken);
+  // Save tokens and user data (backend sends 'token', not 'accessToken')
+  saveTokens(data.token, data.refreshToken);
   if (data.user) {
     localStorage.setItem("user", JSON.stringify(data.user));
   }

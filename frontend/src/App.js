@@ -1,6 +1,7 @@
 import "./App.css";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./component/dashboard/home";
+import Profile from "./component/dashboard/Profile";
 import { Login, Signup } from "./component/auth/index.js";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -52,6 +53,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "../../App.css"
 //import { chatWithAgent } from "../api";
 
@@ -7,6 +9,15 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   async function handleSend() {
     if (!message.trim()) return;
@@ -68,10 +79,43 @@ export default function Home() {
       <main className="main-content">
         <header className="chat-header">
           <h2>Chat with AI SQL Agent</h2>
-          <span className="status-badge">
-            <span className="status-dot"></span>
-            Connected to {dataset}
-          </span>
+          <div className="header-right">
+            <span className="status-badge">
+              <span className="status-dot"></span>
+              Connected to {dataset}
+            </span>
+            
+            {/* User Menu */}
+            <div className="user-menu-container">
+              <button 
+                className="user-menu-button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+              >
+                <span className="user-avatar">👤</span>
+                <span className="user-name">{user?.name || "User"}</span>
+                <span className="dropdown-arrow">▼</span>
+              </button>
+              
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <div className="dropdown-header">
+                    <span className="user-avatar-large">👤</span>
+                    <div className="user-info">
+                      <span className="user-name-large">{user?.name || "User"}</span>
+                      <span className="user-email">{user?.email || ""}</span>
+                    </div>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={() => navigate("/profile")}>
+                    <span>⚙️</span> Profile Settings
+                  </button>
+                  <button className="dropdown-item logout-button" onClick={handleLogout}>
+                    <span>🚪</span> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         <div className="chat-container">
