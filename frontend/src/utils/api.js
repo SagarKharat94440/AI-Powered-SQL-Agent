@@ -181,3 +181,52 @@ export const updateUserProfile = async (userData) => {
     body: JSON.stringify(userData),
   });
 };
+
+// Upload a file for querying
+export const uploadFile = async (file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/api/ai/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Upload failed");
+  }
+  return data;
+};
+
+// Get schema for a dataset
+export const getSchemaInfo = async (dataset) => {
+  return apiRequest(`/api/ai/schema/${dataset}`, {
+    method: "GET",
+  });
+};
+
+// Get a user's conversations
+export const getConversations = async () => {
+  return apiRequest("/api/ai/conversations", {
+    method: "GET",
+  });
+};
+
+// Get a specific conversation by ID
+export const getConversation = async (id) => {
+  return apiRequest(`/api/ai/conversations/${id}`, {
+    method: "GET",
+  });
+};
+
+// Delete a conversation
+export const deleteConversation = async (id) => {
+  return apiRequest(`/api/ai/conversations/${id}`, {
+    method: "DELETE",
+  });
+};
