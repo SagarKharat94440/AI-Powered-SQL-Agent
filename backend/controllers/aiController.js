@@ -1,6 +1,7 @@
 import { createSQLAgent } from "../agents/sqlAgent.js";
 import { getSchema, getDatasetList } from "../services/dbService.js";
 import { parseAndStoreFile, upload, getUploadSession } from "../services/uploadService.js";
+import FileHistory from "../models/fileHistory.js";
 import Conversation from "../models/conversation.js";
 
 // Store active agents per user session
@@ -39,13 +40,20 @@ export const chat = async (req, res) => {
         }
 
         if (isUpload) {
-            const session = getUploadSession(dataset);
+            // Check MongoDB for the upload session instead of in-memory Map
+            const session = await getUploadSession(dataset);
             if (!session) {
                 return res.status(404).json({
                     success: false,
                     message: "Upload session expired or not found. Please re-upload your file.",
                 });
             }
+
+            // Update lastActive timestamp on every query
+            await FileHistory.updateOne(
+                { fileId: dataset },
+                { lastActive: new Date() }
+            );
         }
 
         // Get or create conversation
@@ -106,7 +114,9 @@ export const uploadFile = async (req, res) => {
             });
         }
 
-        const session = await parseAndStoreFile(req.file);
+        // Pass userId so the file is associated with the authenticated user
+        const userId = req.user.userId;
+        const session = await parseAndStoreFile(req.file, userId);
 
         res.json({
             success: true,
@@ -134,7 +144,8 @@ export const getSchemaInfo = async (req, res) => {
 
         let schema;
         if (dataset.startsWith("upload_")) {
-            const session = getUploadSession(dataset);
+            // Fetch schema from MongoDB instead of in-memory Map
+            const session = await getUploadSession(dataset);
             if (!session) {
                 return res.status(404).json({ success: false, message: "Upload session not found." });
             }
@@ -202,6 +213,21 @@ export const deleteConversation = async (req, res) => {
     }
 };
 
+// Get available uploaded files
+export const getUploadedFiles = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const uploadedFiles = await FileHistory.find({ userId })
+            .select("fileId fileName rowCount fileSchema createdAt")
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, data: uploadedFiles });
+    } catch (error) {
+        console.error("Get Uploaded Files Error:", error);
+        res.status(500).json({ success: false, message: "Unable to load uploaded files." });
+    }
+};
+
 // Get available datasets
 export const getDatasets = async (req, res) => {
     const datasets = getDatasetList();
@@ -210,4 +236,4 @@ export const getDatasets = async (req, res) => {
 
 export { upload as multerUpload };
 
-export default { chat, getConversations, getConversation, deleteConversation, getDatasets, uploadFile, getSchemaInfo };
+export default { chat, getConversations, getConversation, deleteConversation, getDatasets, uploadFile, getSchemaInfo, getUploadedFiles };

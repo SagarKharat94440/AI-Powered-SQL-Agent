@@ -15,7 +15,7 @@ export class SQLAgent {
         if (this.schemaCache) return this.schemaCache;
 
         if (this.dataset.startsWith("upload_")) {
-            this.schemaCache = getUploadSchema(this.dataset);
+            this.schemaCache = await getUploadSchema(this.dataset);
         } else {
             this.schemaCache = await getSchema(this.dataset);
         }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { apiRequest, uploadFile, getConversations, getConversation } from "../../utils/api";
+import { apiRequest, uploadFile, getConversations, getConversation, getUploadedFiles } from "../../utils/api";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import ReactMarkdown from "react-markdown";
 import "../../App.css";
@@ -44,6 +44,7 @@ export default function Home() {
   const [expandedSQL, setExpandedSQL] = useState({});
   const [chartMode, setChartMode] = useState({});
   const [conversations, setConversations] = useState([]);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -56,7 +57,8 @@ export default function Home() {
 
   useEffect(() => {
     fetchConversations();
-  }, [conversationId]); // Refresh list when a new conversation starts
+    fetchUploadedFiles();
+  }, [conversationId, showUpload]); // Refresh list when a new conversation starts or upload tab is clicked
 
   const fetchConversations = async () => {
     try {
@@ -67,13 +69,61 @@ export default function Home() {
     }
   };
 
+  const fetchUploadedFiles = async () => {
+    try {
+      const res = await getUploadedFiles();
+      if (res.success) setUploadedFiles(res.data);
+    } catch (e) {
+      console.error("Failed to load uploaded files:", e);
+    }
+  };
+
+  const handleLoadFile = (file) => {
+    setDataset(file.fileId);
+    setUploadInfo({
+      sessionId: file.fileId,
+      fileName: file.fileName,
+      rowCount: file.rowCount,
+      columns: file.fileSchema?.headers || []
+    });
+    
+    // Check if there's a conversation for this file
+    const fileConversations = conversations.filter(c => c.dataset === file.fileId);
+    if (fileConversations.length > 0) {
+      // Load the most recent conversation for this file
+      loadConversation(fileConversations[0]._id);
+    } else {
+      // Start fresh chat
+      setChat([]);
+      setConversationId(null);
+    }
+  };
+
   const loadConversation = async (id) => {
     try {
       const res = await getConversation(id);
       if (res.success) {
         setConversationId(res.data._id);
         setDataset(res.data.dataset);
-        setShowUpload(res.data.dataset.startsWith("upload_"));
+        
+        const isUpload = res.data.dataset.startsWith("upload_");
+        setShowUpload(isUpload);
+        
+        if (isUpload) {
+          // Find the file in uploadedFiles to populate uploadInfo
+          let fileObj = uploadedFiles.find(f => f.fileId === res.data.dataset);
+          if (fileObj) {
+            setUploadInfo({
+              sessionId: fileObj.fileId,
+              fileName: fileObj.fileName,
+              rowCount: fileObj.rowCount,
+              columns: fileObj.fileSchema?.headers || []
+            });
+          }
+        } else {
+          setUploadInfo(null);
+        }
+
         const mappedChat = res.data.messages.map(m => {
           if (m.role === "user") return { user: m.content };
           return { ai: m.content, sqlQuery: m.sqlQuery, queryResult: m.queryResult };
@@ -114,6 +164,7 @@ export default function Home() {
     setShowUpload(true);
     setChat([]);
     setConversationId(null);
+    setUploadInfo(null);
   };
 
   const switchToSample = () => {
@@ -286,9 +337,7 @@ export default function Home() {
     );
   };
 
-  const filteredConversations = conversations.filter(c => 
-    showUpload ? c.dataset.startsWith("upload_") : c.dataset === dataset
-  );
+  const filteredConversations = conversations.filter(c => c.dataset === dataset);
 
   return (
     <div className="app-container">
@@ -331,28 +380,54 @@ export default function Home() {
           </div>
         )}
 
-        {/* Past Conversations */}
-        {filteredConversations.length > 0 && (
+        {/* Sidebar dynamic list */}
+        {(showUpload ? uploadedFiles.length > 0 : filteredConversations.length > 0) && (
           <div className="query-history">
-            <h3>📜 Past Conversations</h3>
+            <h3>{showUpload ? "📁 Your Uploaded Files" : "📜 Past Conversations"}</h3>
             <div className="history-list">
-              {filteredConversations.map((conv) => (
-                <button 
-                  key={conv._id} 
-                  className={`history-item ${conversationId === conv._id ? "active" : ""}`} 
-                  onClick={() => loadConversation(conv._id)}
-                  title={conv.title || "New Conversation"}
-                >
-                  <span className="history-q">
-                    {conv.title || "New Conversation"}
-                  </span>
-                  <span className="history-date" style={{ fontSize: "10px", color: "#6666aa", display: "block", marginTop: "4px" }}>
-                    {new Date(conv.updatedAt).toLocaleDateString()}
-                  </span>
-                </button>
-              ))}
+              {showUpload ? (
+                uploadedFiles.map((file) => (
+                  <button 
+                    key={file.fileId} 
+                    className={`history-item ${dataset === file.fileId ? "active" : ""}`} 
+                    onClick={() => handleLoadFile(file)}
+                    title={file.fileName}
+                  >
+                    <span className="history-q">
+                      {file.fileName}
+                    </span>
+                    <span className="history-date" style={{ fontSize: "10px", color: "#6666aa", display: "block", marginTop: "4px" }}>
+                      {new Date(file.createdAt).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                filteredConversations.map((conv) => (
+                  <button 
+                    key={conv._id} 
+                    className={`history-item ${conversationId === conv._id ? "active" : ""}`} 
+                    onClick={() => loadConversation(conv._id)}
+                    title={conv.title || "New Conversation"}
+                  >
+                    <span className="history-q">
+                      {conv.title || "New Conversation"}
+                    </span>
+                    <span className="history-date" style={{ fontSize: "10px", color: "#6666aa", display: "block", marginTop: "4px" }}>
+                      {new Date(conv.updatedAt).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
-            <button className="new-chat-btn" onClick={switchToSample} style={{ marginTop: "12px", width: "100%", padding: "8px", borderRadius: "8px", background: "rgba(102, 126, 234, 0.1)", border: "1px dashed #667eea", color: "#e0e0f0", cursor: "pointer" }}>+ New Chat</button>
+            {!showUpload && (
+              <button 
+                className="new-chat-btn" 
+                onClick={switchToSample} 
+                style={{ marginTop: "12px", width: "100%", padding: "8px", borderRadius: "8px", background: "rgba(102, 126, 234, 0.1)", border: "1px dashed #667eea", color: "#e0e0f0", cursor: "pointer" }}
+              >
+                + New Chat
+              </button>
+            )}
           </div>
         )}
 
@@ -403,7 +478,7 @@ export default function Home() {
         </header>
 
         <div className="chat-container">
-          {showUpload && !uploadInfo ? (
+          {showUpload && !uploadInfo && chat.length === 0 ? (
             /* File Upload Zone */
             <div className="upload-zone-wrapper">
               <div className={`upload-zone ${dragOver ? "drag-over" : ""}`} onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onClick={() => fileInputRef.current?.click()}>

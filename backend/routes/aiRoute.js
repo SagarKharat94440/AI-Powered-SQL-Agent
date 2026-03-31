@@ -1,5 +1,5 @@
 import express from "express";
-import { chat, getConversations, getConversation, deleteConversation, getDatasets, uploadFile, getSchemaInfo, multerUpload } from "../controllers/aiController.js";
+import { chat, getConversations, getConversation, deleteConversation, getDatasets, uploadFile, getSchemaInfo, multerUpload, getUploadedFiles } from "../controllers/aiController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
@@ -18,6 +18,9 @@ router.get("/schema/:dataset", getSchemaInfo);
 
 // Get available datasets
 router.get("/datasets", getDatasets);
+
+// Get available uploaded files
+router.get("/uploads", getUploadedFiles);
 
 // Conversation management
 router.get("/conversations", getConversations);

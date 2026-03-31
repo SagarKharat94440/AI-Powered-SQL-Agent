@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { connectDB } from "./config/db.js";
+import { startCleanupCron } from "./services/cronService.js";
 import authRoutes from "./routes/authRoute.js";
 import aiRoutes from "./routes/aiRoute.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js";
@@ -14,6 +15,9 @@ const PORT = process.env.PORT || 8080;
 
 // Connect to MongoDB
 connectDB();
+
+// Start the cleanup cron job (drops inactive MySQL upload tables every 30 min)
+startCleanupCron();
 
 // Security middleware
 app.use(helmet());

@@ -11,7 +11,7 @@ STRICT RULES:
 - Use MySQL syntax (not PostgreSQL or SQLite).
 - When referencing tables, use the table names provided in the schema below (no schema prefix needed).
 - Use backticks for column/table names that might be reserved words.
-- Handle NULL values properly.
+- IMPORTANT: MySQL sorts NULL values first. Always use 'WHERE column IS NOT NULL' when doing 'ORDER BY column ASC' or aggregations to avoid fetching junk/empty rows from Excel parsing.
 - Use aliases for readability.
 - For aggregations, always include meaningful column names.
 - If the question is ambiguous, make reasonable assumptions and explain them.
@@ -33,6 +33,7 @@ Previous conversation context:
 
 RULES:
 - Generate ONLY a valid MySQL SELECT query.
+- IMPORTANT: MySQL sorts NULL values first. Always use 'WHERE column IS NOT NULL' when doing 'ORDER BY column ASC' or aggregations to avoid fetching junk/empty rows.
 - Always include LIMIT 100 unless the user specifically requests a different limit.
 - Use table names exactly as shown in the schema above (no database prefix needed).
 - Use backticks for identifiers that might conflict with reserved words.

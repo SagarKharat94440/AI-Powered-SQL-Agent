@@ -230,3 +230,10 @@ export const deleteConversation = async (id) => {
     method: "DELETE",
   });
 };
+
+// Get uploaded files
+export const getUploadedFiles = async () => {
+  return apiRequest("/api/ai/uploads", {
+    method: "GET",
+  });
+};
