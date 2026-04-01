@@ -63,7 +63,7 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/auth/register", {
+      const response = await fetch("https://api.sql-agent.dev/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
