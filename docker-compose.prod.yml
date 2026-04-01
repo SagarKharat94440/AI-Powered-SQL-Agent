@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    container_name: sqlagent-backend
+    ports:
+      - "8080:8080"
+    env_file: ./backend/.env
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_URL: https://api.sql-agent.dev
+    container_name: sqlagent-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: sqlagent-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    restart: always
