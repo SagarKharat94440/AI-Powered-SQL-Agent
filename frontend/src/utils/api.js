@@ -1,7 +1,6 @@
 // api.js - Utility functions for API calls with JWT
 
-const API_BASE_URL = "http://localhost:8080";
-
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 // Get token from localStorage
 export const getToken = () => {
   return localStorage.getItem("accessToken");
