@@ -1,0 +1,5 @@
+node_modules
+.env
+.env.production
+.gitignore
+README.md
