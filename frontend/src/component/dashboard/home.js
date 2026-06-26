@@ -36,6 +36,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [conversationId, setConversationId] = useState(null);
+  const [queryHistory, setQueryHistory] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadInfo, setUploadInfo] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
