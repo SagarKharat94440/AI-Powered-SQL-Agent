@@ -2,21 +2,27 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3
 import dotenv from "dotenv";
 dotenv.config();
 
-// Configure S3 client for DigitalOcean Spaces
+const bucketEndpoint = process.env.B2_ENDPOINT || "https://s3.us-west-004.backblazeb2.com";
+const bucketRegion = process.env.B2_REGION || "us-west-004";
+const bucketAccessKeyId = process.env.B2_KEY_ID || "";
+const bucketSecretAccessKey = process.env.B2_APPLICATION_KEY || "";
+const bucketName = process.env.B2_BUCKET || "";
+
+// Configure S3 client for Backblaze B2
 const s3Client = new S3Client({
-    endpoint: process.env.DO_SPACES_ENDPOINT || "https://nyc3.digitaloceanspaces.com",
-    region: process.env.DO_SPACES_REGION || "nyc3",
+    endpoint: bucketEndpoint,
+    region: bucketRegion,
     credentials: {
-        accessKeyId: process.env.DO_SPACES_KEY || "",
-        secretAccessKey: process.env.DO_SPACES_SECRET || "",
+        accessKeyId: bucketAccessKeyId,
+        secretAccessKey: bucketSecretAccessKey,
     },
     forcePathStyle: false,
 });
 
-const BUCKET = process.env.DO_SPACES_BUCKET || "";
+const BUCKET = bucketName;
 
 /**
- * Upload a file buffer to DigitalOcean Spaces
+ * Upload a file buffer to the configured S3-compatible bucket
  * @param {Buffer} buffer - The raw file buffer
  * @param {string} fileName - Original file name (used to build the key)
  * @param {string} fileId - Unique file ID for namespacing
@@ -36,21 +42,21 @@ export const uploadToSpaces = async (buffer, fileName, fileId) => {
     await s3Client.send(command);
 
     // Build the permanent URL
-    const endpoint = process.env.DO_SPACES_ENDPOINT || "https://nyc3.digitaloceanspaces.com";
+    const endpoint = bucketEndpoint;
     const fileUrl = `${endpoint}/${BUCKET}/${key}`;
     
-    console.log(`File uploaded to DO Spaces: ${fileUrl}`);
+    console.log(`File uploaded to bucket storage: ${fileUrl}`);
     return fileUrl;
 };
 
 /**
- * Download a file from DigitalOcean Spaces
+ * Download a file from the configured S3-compatible bucket
  * @param {string} fileUrl - The full file URL
  * @returns {Buffer} The file buffer
  */
 export const downloadFromSpaces = async (fileUrl) => {
     // Extract the key from the URL
-    const endpoint = process.env.DO_SPACES_ENDPOINT || "https://nyc3.digitaloceanspaces.com";
+    const endpoint = bucketEndpoint;
     const prefix = `${endpoint}/${BUCKET}/`;
     const key = fileUrl.replace(prefix, "");
 

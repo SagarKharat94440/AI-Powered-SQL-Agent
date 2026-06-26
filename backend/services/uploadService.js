@@ -26,7 +26,7 @@ export const upload = multer({
 });
 
 /**
- * Parse uploaded file, store in DO Spaces, save schema to MongoDB, and create MySQL table.
+ * Parse uploaded file, store in bucket storage, save schema to MongoDB, and create MySQL table.
  * @param {Object} file - The multer file object
  * @param {string} userId - The authenticated user's ID
  */
@@ -97,7 +97,7 @@ export const parseAndStoreFile = async (file, userId) => {
     // Sanitize headers for MySQL column names
     const safeHeaders = headers.map(h => h.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase());
 
-    // --- Step 1: Upload raw file to DO Spaces ---
+    // --- Step 1: Upload raw file to object storage ---
     const fileUrl = await uploadToSpaces(file.buffer, file.originalname, sessionId);
 
     // --- Step 2: Create MySQL table and insert rows ---
@@ -142,7 +142,7 @@ export const parseAndStoreFile = async (file, userId) => {
         lastActive: new Date(),
     });
 
-    console.log(`File stored: ${file.originalname} → DO Spaces + MongoDB + MySQL (${data.length} rows)`);
+    console.log(`File stored: ${file.originalname} → object storage + MongoDB + MySQL (${data.length} rows)`);
 
     return {
         sessionId,
