@@ -5,7 +5,7 @@ import XLSX from "xlsx";
 
 /**
  * Ensure the MySQL table for an uploaded file exists.
- * If not, recreate it from the DO Spaces backup using the stored schema.
+ * If not, recreate it from the uploaded file backup using the stored schema.
  */
 export const ensureUploadTable = async (dataset) => {
     const pool = getConnection();
@@ -29,8 +29,8 @@ export const ensureUploadTable = async (dataset) => {
         return doc.tableName;
     }
 
-    // Table was dropped (by cron or restart) — recreate from DO Spaces file
-    console.log(`[RECREATE] Table ${doc.tableName} not found. Downloading from DO Spaces...`);
+    // Table was dropped (by cron or restart) — recreate from uploaded file backup
+    console.log(`[RECREATE] Table ${doc.tableName} not found. Downloading from object storage...`);
 
     const fileBuffer = await downloadFromSpaces(doc.fileUrl);
 

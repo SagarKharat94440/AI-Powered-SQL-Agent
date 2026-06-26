@@ -59,7 +59,8 @@ cp .env.example .env
 ```
 
 Key environment variables:
-- `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_PORT` — MySQL connection
+- `TIDB_MYSQL_HOST`, `TIDB_MYSQL_USER`, `TIDB_MYSQL_PASSWORD`, `TIDB_MYSQL_PORT`, `TIDB_MYSQL_SSL` — TiDB connection
+- `B2_ENDPOINT`, `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET`, `B2_REGION` — Backblaze B2 object storage
 - `MONGODB_URI` — MongoDB connection string
 - `GOOGLE_API_KEY` — Gemini API key
 - `JWT_SECRET` — Secret for JWT tokens
@@ -145,14 +146,15 @@ SQL-Agent/
 └── README.md
 ```
 
-## 🌐 Deployment (DigitalOcean)
+## 🌐 Deployment
 
-1. Create a MySQL managed database on DigitalOcean
-2. Create a MongoDB database (Atlas or DigitalOcean)
-3. Set `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_PORT` to your DigitalOcean MySQL credentials
-4. Run `node scripts/seedDatabases.js` to populate data
-5. Deploy backend as a Node.js app
-6. Deploy frontend as a static site (run `npm run build` first)
+1. Create a TiDB Cloud database or your preferred MySQL-compatible database
+2. Create a MongoDB database (Atlas or another managed provider)
+3. Set the `TIDB_MYSQL_*` variables in `.env` to your TiDB credentials
+4. Set the `B2_*` variables in `.env` to your Backblaze B2 bucket credentials
+5. Run `node scripts/seedDatabases.js` to populate data
+6. Deploy backend as a Node.js app
+7. Deploy frontend as a static site (run `npm run build` first)
 
 ## License
 

@@ -1,6 +1,6 @@
 // api.js - Utility functions for API calls with JWT
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.sql-agent.dev";
+export const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.sql-agent.dev";
 // Get token from localStorage
 export const getToken = () => {
   return localStorage.getItem("accessToken");

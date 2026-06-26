@@ -2,18 +2,22 @@ import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 dotenv.config();
 
+const mysqlHost = process.env.TIDB_MYSQL_HOST || process.env.MYSQL_HOST || "localhost";
+const mysqlUser = process.env.TIDB_MYSQL_USER || process.env.MYSQL_USER || "root";
+const mysqlPassword = process.env.TIDB_MYSQL_PASSWORD || process.env.MYSQL_PASSWORD || "";
+const mysqlPort = parseInt(process.env.TIDB_MYSQL_PORT || process.env.MYSQL_PORT || "3306", 10);
+const mysqlSsl = (process.env.TIDB_MYSQL_SSL || process.env.MYSQL_SSL || "false").toLowerCase() === "true";
+
 // MySQL connection pool
 const pool = mysql.createPool({
-    host: process.env.DO_MYSQL_HOST,
-    user: process.env.DO_MYSQL_USER,
-    password: process.env.DO_MYSQL_PASSWORD,
-    port: parseInt(process.env.DO_MYSQL_PORT),
+    host: mysqlHost,
+    user: mysqlUser,
+    password: mysqlPassword,
+    port: mysqlPort,
     waitForConnections: true,
     connectionLimit: 10,
     multipleStatements: false,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ...(mysqlSsl ? { ssl: { rejectUnauthorized: false } } : {})
 });
 
 // Dataset to MySQL database name mapping

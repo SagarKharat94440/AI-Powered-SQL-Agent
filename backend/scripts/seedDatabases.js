@@ -7,14 +7,21 @@ import path from "path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+const mysqlHost = process.env.TIDB_MYSQL_HOST || process.env.MYSQL_HOST || "localhost";
+const mysqlUser = process.env.TIDB_MYSQL_USER || process.env.MYSQL_USER || "root";
+const mysqlPassword = process.env.TIDB_MYSQL_PASSWORD || process.env.MYSQL_PASSWORD || "";
+const mysqlPort = parseInt(process.env.TIDB_MYSQL_PORT || process.env.MYSQL_PORT || "3306", 10);
+const mysqlSsl = (process.env.TIDB_MYSQL_SSL || process.env.MYSQL_SSL || "false").toLowerCase() === "true";
+
 const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST || "localhost",
-    user: process.env.MYSQL_USER || "root",
-    password: process.env.MYSQL_PASSWORD || "",
-    port: parseInt(process.env.MYSQL_PORT) || 3306,
+    host: mysqlHost,
+    user: mysqlUser,
+    password: mysqlPassword,
+    port: mysqlPort,
     waitForConnections: true,
     connectionLimit: 5,
     multipleStatements: true,
+    ...(mysqlSsl ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 async function seedAll() {

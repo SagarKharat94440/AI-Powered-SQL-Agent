@@ -7,7 +7,7 @@ const INACTIVE_THRESHOLD_MINUTES = 30;
 /**
  * Start the cleanup cron job that runs every 30 minutes.
  * Drops MySQL tables for file uploads that haven't been active recently.
- * MongoDB documents and DO Spaces files are NEVER deleted.
+ * MongoDB documents and uploaded files are NEVER deleted.
  */
 export const startCleanupCron = () => {
     // Run every 30 minutes
