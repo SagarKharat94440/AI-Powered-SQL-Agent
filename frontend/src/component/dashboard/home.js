@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { apiRequest, uploadFile, getConversations, getConversation, getUploadedFiles } from "../../utils/api";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ReactMarkdown from "react-markdown";
 import "../../App.css";
 
@@ -36,7 +36,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [conversationId, setConversationId] = useState(null);
-  const [queryHistory, setQueryHistory] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadInfo, setUploadInfo] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
