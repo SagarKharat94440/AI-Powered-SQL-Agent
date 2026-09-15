@@ -7,8 +7,10 @@ import { SQL_AGENT_SYSTEM_PROMPT, QUERY_GENERATION_PROMPT, RESPONSE_FORMAT_PROMP
 export class SQLAgent {
     constructor(dataset) {
         this.dataset = dataset;
-        this.llm = createLLM();
+        this.llm = createLLM();           // For response formatting (2048 tokens)
+        this.llmFast = createLLM(512);    // For SQL generation (smaller output)
         this.schemaCache = null;
+        this.lastUsed = Date.now();       // TTL tracking
     }
 
     async getSchemaString() {
@@ -54,7 +56,7 @@ export class SQLAgent {
                 .replace("{question}", userMessage)
                 .replace("{history}", historyContext || "No previous context");
 
-            const queryResponse = await this.llm.invoke([
+            const queryResponse = await this.llmFast.invoke([
                 { role: "system", content: "You are a MySQL query generator. Output only valid SQL SELECT queries. No markdown, no explanation." },
                 { role: "user", content: queryPrompt },
             ]);
@@ -95,18 +97,28 @@ export class SQLAgent {
             }
 
             // Step 4: Format the response
-            const formatPrompt = RESPONSE_FORMAT_PROMPT
-                .replace("{question}", userMessage)
-                .replace("{query}", sqlQuery)
-                .replace("{results}", JSON.stringify(queryResult.data?.slice(0, 50), null, 2));
+            let formattedResponse;
+            const rowCount = queryResult.data?.length || 0;
 
-            const formatResponse = await this.llm.invoke([
-                { role: "system", content: "You are a helpful data analyst. Explain query results clearly and conversationally." },
-                { role: "user", content: formatPrompt },
-            ]);
+            // Skip expensive LLM call for very small results
+            if (rowCount <= 3 && rowCount > 0) {
+                const preview = JSON.stringify(queryResult.data, null, 2);
+                formattedResponse = `Here are the results for your query:\n\n${preview}`;
+            } else {
+                const formatPrompt = RESPONSE_FORMAT_PROMPT
+                    .replace("{question}", userMessage)
+                    .replace("{query}", sqlQuery)
+                    .replace("{results}", JSON.stringify(queryResult.data?.slice(0, 50), null, 2));
+
+                const formatResponse = await this.llm.invoke([
+                    { role: "system", content: "You are a helpful data analyst. Explain query results clearly and conversationally." },
+                    { role: "user", content: formatPrompt },
+                ]);
+                formattedResponse = formatResponse.content;
+            }
 
             return {
-                response: formatResponse.content,
+                response: formattedResponse,
                 sqlQuery,
                 queryResult,
             };
@@ -127,7 +139,7 @@ export class SQLAgent {
                 .replace("{question}", question)
                 .replace("{schema}", schema);
 
-            const retryResponse = await this.llm.invoke([
+            const retryResponse = await this.llmFast.invoke([
                 { role: "system", content: "You are a MySQL query fixer. Output only the corrected SQL SELECT query." },
                 { role: "user", content: retryPrompt },
             ]);

@@ -6,14 +6,37 @@ import Conversation from "../models/conversation.js";
 
 // Store active agents per user session
 const agentSessions = new Map();
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_SESSIONS = 100;
+
+// Evict expired sessions
+const evictStaleSessions = () => {
+    const now = Date.now();
+    for (const [key, agent] of agentSessions) {
+        if (now - agent.lastUsed > SESSION_TTL_MS) {
+            agentSessions.delete(key);
+        }
+    }
+};
 
 // Get or create agent for a session
 const getAgent = (userId, dataset) => {
     const sessionKey = `${userId}-${dataset}`;
-    if (!agentSessions.has(sessionKey)) {
-        agentSessions.set(sessionKey, createSQLAgent(dataset));
+
+    if (agentSessions.has(sessionKey)) {
+        const agent = agentSessions.get(sessionKey);
+        agent.lastUsed = Date.now();
+        return agent;
     }
-    return agentSessions.get(sessionKey);
+
+    // Evict stale sessions before adding new ones
+    if (agentSessions.size >= MAX_SESSIONS) {
+        evictStaleSessions();
+    }
+
+    const agent = createSQLAgent(dataset);
+    agentSessions.set(sessionKey, agent);
+    return agent;
 };
 
 // Send a chat message to the SQL Agent
