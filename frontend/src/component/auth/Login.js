@@ -110,7 +110,7 @@ export default function Login() {
             )}
           </button>
         </form>
-
+{/* 
         <div className="auth-divider">
           <span>or continue with</span>
         </div>
@@ -131,7 +131,7 @@ export default function Login() {
             </svg>
             GitHub
           </button>
-        </div>
+        </div> */}
 
         <p className="auth-switch">
           Don't have an account?{" "}
