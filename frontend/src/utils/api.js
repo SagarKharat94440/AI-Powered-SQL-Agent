@@ -87,35 +87,50 @@ export const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
-// Refresh access token using refresh token
+// Refresh token lock to prevent race conditions
+let refreshPromise = null;
+
+// Refresh access token using refresh token (with lock to prevent concurrent refreshes)
 export const refreshAccessToken = async () => {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
   const refreshToken = getRefreshToken();
   
   if (!refreshToken) {
     return false;
   }
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
+  // Create the promise and store it so concurrent callers reuse it
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      // Backend sends 'token', not 'accessToken'
+      saveTokens(data.token, data.refreshToken);
+      return true;
+    } catch (error) {
+      console.error("Token refresh error:", error);
       return false;
+    } finally {
+      refreshPromise = null;
     }
+  })();
 
-    const data = await response.json();
-    // Backend sends 'token', not 'accessToken'
-    saveTokens(data.token, data.refreshToken);
-    return true;
-  } catch (error) {
-    console.error("Token refresh error:", error);
-    return false;
-  }
+  return refreshPromise;
 };
 
 // Login function

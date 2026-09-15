@@ -36,7 +36,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [conversationId, setConversationId] = useState(null);
-  const [queryHistory, setQueryHistory] = useState([]);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadInfo, setUploadInfo] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -55,10 +54,11 @@ export default function Home() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
+  // Fetch conversations and uploaded files on mount only
   useEffect(() => {
     fetchConversations();
     fetchUploadedFiles();
-  }, [conversationId, showUpload]); // Refresh list when a new conversation starts or upload tab is clicked
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchConversations = async () => {
     try {
@@ -175,7 +175,7 @@ export default function Home() {
   };
 
   // File upload handlers
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = useCallback(async (file) => {
     if (!file) return;
     setIsUploading(true);
     try {
@@ -193,14 +193,14 @@ export default function Home() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     handleFileUpload(file);
-  }, []);
+  }, [handleFileUpload]);
 
   const handleDragOver = (e) => { e.preventDefault(); setDragOver(true); };
   const handleDragLeave = () => setDragOver(false);
@@ -226,6 +226,7 @@ export default function Home() {
       });
 
       if (response.success) {
+        const isNewConversation = !conversationId;
         setConversationId(response.data.conversationId);
         const aiMsg = {
           ai: response.data.response,
@@ -234,11 +235,10 @@ export default function Home() {
         };
         setChat(prev => [...prev, aiMsg]);
 
-        // Add to history
-        setQueryHistory(prev => {
-          const updated = [{ question: userMessage, ...aiMsg, timestamp: new Date() }, ...prev];
-          return updated.slice(0, 5);
-        });
+        // Only refresh conversation list when a new conversation is created
+        if (isNewConversation) {
+          fetchConversations();
+        }
       } else {
         setChat(prev => [...prev, { ai: response.message || "I couldn't understand that question — try rephrasing it.", type: "error" }]);
       }
