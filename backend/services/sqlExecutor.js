@@ -3,6 +3,9 @@ import { downloadFromSpaces } from "./spacesService.js";
 import FileHistory from "../models/fileHistory.js";
 import XLSX from "xlsx";
 
+// Validate table/database names to prevent injection
+const isValidIdentifier = (name) => /^[a-zA-Z0-9_]+$/.test(name);
+
 /**
  * Ensure the MySQL table for an uploaded file exists.
  * If not, recreate it from the uploaded file backup using the stored schema.
@@ -14,6 +17,10 @@ export const ensureUploadTable = async (dataset) => {
     const doc = await FileHistory.findOne({ fileId: dataset });
     if (!doc) {
         throw new Error("Upload session not found. Please re-upload your file.");
+    }
+
+    if (!isValidIdentifier(doc.tableName)) {
+        throw new Error("Invalid table name detected.");
     }
 
     // Check if MySQL table exists
@@ -82,16 +89,16 @@ export const ensureUploadTable = async (dataset) => {
     await pool.query(`DROP TABLE IF EXISTS \`${doc.tableName}\``);
     await pool.query(`CREATE TABLE \`${doc.tableName}\` (id INT AUTO_INCREMENT PRIMARY KEY, ${columns})`);
 
-    // Insert all rows
-    const batchSize = 50;
+    // Insert all rows in bulk batches
+    const batchSize = 500;
+    const bulkCols = safeHeaders.map(h => `\`${h}\``).join(", ");
     for (let i = 0; i < data.length; i += batchSize) {
         const batch = data.slice(i, i + batchSize);
-        for (const row of batch) {
-            const values = headers.map(h => row[h] ?? null);
-            const placeholders = values.map(() => "?").join(", ");
-            const cols = safeHeaders.map(h => `\`${h}\``).join(", ");
-            await pool.query(`INSERT INTO \`${doc.tableName}\` (${cols}) VALUES (${placeholders})`, values);
-        }
+        const placeholders = batch.map(() =>
+            `(${safeHeaders.map(() => '?').join(', ')})`
+        ).join(', ');
+        const values = batch.flatMap(row => headers.map(h => row[h] ?? null));
+        await pool.query(`INSERT INTO \`${doc.tableName}\` (${bulkCols}) VALUES ${placeholders}`, values);
     }
 
     // Update lastActive
@@ -118,18 +125,22 @@ export const executeQuery = async (dataset, query) => {
             await ensureUploadTable(dataset);
         }
 
-        // Use the correct database for the dataset
+        // Use a dedicated connection to avoid USE race conditions on the shared pool
         const db = dataset.startsWith("upload_") ? "sql_agent_uploads" : dbName;
-        await pool.query(`USE \`${db}\``);
+        const conn = await pool.getConnection();
+        try {
+            await conn.query(`USE \`${db}\``);
+            const [rows, fields] = await conn.query(query);
 
-        const [rows, fields] = await pool.query(query);
-
-        return {
-            success: true,
-            data: rows,
-            rowCount: rows.length,
-            fields: fields?.map(f => f.name) || [],
-        };
+            return {
+                success: true,
+                data: rows,
+                rowCount: rows.length,
+                fields: fields?.map(f => f.name) || [],
+            };
+        } finally {
+            conn.release();
+        }
     } catch (error) {
         console.error("Query execution error:", error.message);
         return {

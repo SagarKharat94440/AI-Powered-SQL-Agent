@@ -111,16 +111,16 @@ export const parseAndStoreFile = async (file, userId) => {
     await pool.query(`DROP TABLE IF EXISTS \`${tableName}\``);
     await pool.query(`CREATE TABLE \`${tableName}\` (id INT AUTO_INCREMENT PRIMARY KEY, ${columns})`);
 
-    // Insert data in batches
-    const batchSize = 50;
+    // Insert data in bulk batches (much faster than row-by-row)
+    const batchSize = 500;
+    const cols = safeHeaders.map(h => `\`${h}\``).join(", ");
     for (let i = 0; i < data.length; i += batchSize) {
         const batch = data.slice(i, i + batchSize);
-        for (const row of batch) {
-            const values = headers.map(h => row[h] ?? null);
-            const placeholders = values.map(() => "?").join(", ");
-            const cols = safeHeaders.map(h => `\`${h}\``).join(", ");
-            await pool.query(`INSERT INTO \`${tableName}\` (${cols}) VALUES (${placeholders})`, values);
-        }
+        const placeholders = batch.map(() =>
+            `(${safeHeaders.map(() => '?').join(', ')})`
+        ).join(', ');
+        const values = batch.flatMap(row => headers.map(h => row[h] ?? null));
+        await pool.query(`INSERT INTO \`${tableName}\` (${cols}) VALUES ${placeholders}`, values);
     }
 
     // Build schema string for Gemini prompt
