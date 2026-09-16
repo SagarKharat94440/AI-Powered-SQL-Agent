@@ -99,7 +99,7 @@ export default function Login() {
               <span className="checkmark"></span>
               Remember me
             </label>
-            <a href="#forgot" className="forgot-link">Forgot Password?</a>
+            {/* <a href="#forgot" className="forgot-link">Forgot Password?</a> */}
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>
