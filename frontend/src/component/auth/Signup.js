@@ -35,7 +35,7 @@ export default function Signup() {
     if (/[^A-Za-z0-9]/.test(password)) strength++;
 
     const labels = ["Weak", "Fair", "Good", "Strong"];
-    const colors = ["#ff4757", "#ffa502", "#2ed573", "#1e90ff"];
+    const colors = ["#f43f5e", "#f59e0b", "#10b981", "#4f46e5"];
 
     return {
       strength,

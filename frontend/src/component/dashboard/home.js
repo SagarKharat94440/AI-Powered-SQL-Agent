@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import ReactMarkdown from "react-markdown";
 import "../../App.css";
 
-const CHART_COLORS = ["#667eea", "#764ba2", "#11998e", "#38ef7d", "#f093fb", "#f5576c", "#4facfe", "#00f2fe"];
+const CHART_COLORS = ["#6366f1", "#0d9488", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#10b981", "#06b6d4"];
 
 const EXAMPLE_QUESTIONS = {
   ecommerce: [
@@ -305,10 +305,10 @@ export default function Home() {
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={getChartData(queryResult)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a4a" />
-                <XAxis dataKey="name" tick={{ fill: "#8888aa", fontSize: 11 }} angle={-30} textAnchor="end" height={70} />
-                <YAxis tick={{ fill: "#8888aa", fontSize: 12 }} />
-                <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid #3a3a5a", borderRadius: "8px", color: "#fff" }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} angle={-30} textAnchor="end" height={70} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} />
+                <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", color: "#0f172a", boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08)", fontSize: "12px" }} />
                 {Object.keys(queryResult.data[0]).filter(k => typeof queryResult.data[0][k] === "number").map((key, i) => (
                   <Bar key={key} dataKey={key} fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[4, 4, 0, 0]} />
                 ))}
@@ -396,7 +396,7 @@ export default function Home() {
                     <span className="history-q">
                       {file.fileName}
                     </span>
-                    <span className="history-date" style={{ fontSize: "10px", color: "#6666aa", display: "block", marginTop: "4px" }}>
+                    <span className="history-date">
                       {new Date(file.createdAt).toLocaleDateString()}
                     </span>
                   </button>
@@ -412,7 +412,7 @@ export default function Home() {
                     <span className="history-q">
                       {conv.title || "New Conversation"}
                     </span>
-                    <span className="history-date" style={{ fontSize: "10px", color: "#6666aa", display: "block", marginTop: "4px" }}>
+                    <span className="history-date">
                       {new Date(conv.updatedAt).toLocaleDateString()}
                     </span>
                   </button>
@@ -423,7 +423,7 @@ export default function Home() {
               <button 
                 className="new-chat-btn" 
                 onClick={switchToSample} 
-                style={{ marginTop: "12px", width: "100%", padding: "8px", borderRadius: "8px", background: "rgba(102, 126, 234, 0.1)", border: "1px dashed #667eea", color: "#e0e0f0", cursor: "pointer" }}
+                style={{ marginTop: "12px", width: "100%", padding: "9px 12px", borderRadius: "10px", background: "#f8fafc", border: "1px dashed #cbd5e1", color: "#475569", cursor: "pointer" }}
               >
                 + New Chat
               </button>
