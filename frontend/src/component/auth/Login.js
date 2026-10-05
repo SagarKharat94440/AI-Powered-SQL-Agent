@@ -15,6 +15,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setError("");
     setIsLoading(true);
 
@@ -46,7 +47,7 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="logo-icon">🗃️</span>
+            <span className="logo-mark" aria-hidden="true"></span>
             <h1>SQL Agent</h1>
           </div>
           <h2>Welcome Back</h2>
@@ -59,13 +60,13 @@ export default function Login() {
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">📧</span>
               <input
                 type="email"
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
+                disabled={isLoading}
                 required
               />
             </div>
@@ -74,21 +75,22 @@ export default function Login() {
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">🔒</span>
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
+                disabled={isLoading}
                 required
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "👁️" : "👁️‍🗨️"}
+                <span className={`password-eye ${showPassword ? "visible" : ""}`} aria-hidden="true"></span>
               </button>
             </div>
           </div>
@@ -104,7 +106,7 @@ export default function Login() {
 
           <button type="submit" className="auth-button" disabled={isLoading}>
             {isLoading ? (
-              <span className="button-loader"></span>
+              <><span className="button-loader" aria-hidden="true"></span> Signing in...</>
             ) : (
               "Sign In"
             )}

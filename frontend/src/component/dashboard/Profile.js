@@ -26,6 +26,7 @@ export default function Profile() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -102,8 +103,14 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -129,8 +136,8 @@ export default function Profile() {
           <a href="#password" className="nav-item">
             <span>🔐</span> Change Password
           </a>
-          <button className="nav-item logout" onClick={handleLogout}>
-            <span>🚪</span> Logout
+          <button className="nav-item logout" onClick={handleLogout} disabled={isLoggingOut}>
+            <span>🚪</span> {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
         </nav>
       </aside>

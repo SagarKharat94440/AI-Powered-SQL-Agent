@@ -48,6 +48,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
@@ -109,7 +110,7 @@ export default function Signup() {
       <div className="auth-card signup-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="logo-icon">🗃️</span>
+            <span className="logo-mark" aria-hidden="true"></span>
             <h1>SQL Agent</h1>
           </div>
           <h2>Create Account</h2>
@@ -122,7 +123,6 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">👤</span>
               <input
                 type="text"
                 id="name"
@@ -130,6 +130,7 @@ export default function Signup() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter your full name"
+                disabled={isLoading}
                 required
               />
             </div>
@@ -138,7 +139,6 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">📧</span>
               <input
                 type="email"
                 id="email"
@@ -146,6 +146,7 @@ export default function Signup() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your email"
+                disabled={isLoading}
                 required
               />
             </div>
@@ -154,7 +155,6 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">🔒</span>
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -162,14 +162,16 @@ export default function Signup() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Create a password"
+                disabled={isLoading}
                 required
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "👁️" : "👁️‍🗨️"}
+                <span className={`password-eye ${showPassword ? "visible" : ""}`} aria-hidden="true"></span>
               </button>
             </div>
             {formData.password && (
@@ -195,7 +197,6 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <div className="input-icon-wrapper">
-              <span className="input-icon">🔐</span>
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
@@ -203,14 +204,16 @@ export default function Signup() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm your password"
+                disabled={isLoading}
                 required
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
-                {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                <span className={`password-eye ${showConfirmPassword ? "visible" : ""}`} aria-hidden="true"></span>
               </button>
             </div>
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -233,7 +236,7 @@ export default function Signup() {
 
           <button type="submit" className="auth-button" disabled={isLoading}>
             {isLoading ? (
-              <span className="button-loader"></span>
+              <><span className="button-loader" aria-hidden="true"></span> Creating account...</>
             ) : (
               "Create Account"
             )}

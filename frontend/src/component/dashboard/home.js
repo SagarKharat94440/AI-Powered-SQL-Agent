@@ -44,6 +44,9 @@ export default function Home() {
   const [chartMode, setChartMode] = useState({});
   const [conversations, setConversations] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isConversationLoading, setIsConversationLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -56,8 +59,12 @@ export default function Home() {
 
   // Fetch conversations and uploaded files on mount only
   useEffect(() => {
-    fetchConversations();
-    fetchUploadedFiles();
+    const loadDashboardData = async () => {
+      await Promise.all([fetchConversations(), fetchUploadedFiles()]);
+      setIsInitialLoading(false);
+    };
+
+    loadDashboardData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchConversations = async () => {
@@ -100,6 +107,8 @@ export default function Home() {
   };
 
   const loadConversation = async (id) => {
+    if (isConversationLoading) return;
+    setIsConversationLoading(true);
     try {
       const res = await getConversation(id);
       if (res.success) {
@@ -132,6 +141,8 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error loading conversation:", err);
+    } finally {
+      setIsConversationLoading(false);
     }
   };
 
@@ -147,8 +158,14 @@ export default function Home() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const handleDatasetChange = (e) => {
@@ -212,7 +229,7 @@ export default function Home() {
 
   // Chat send
   async function handleSend() {
-    if (!message.trim()) return;
+    if (isLoading || !message.trim()) return;
 
     const userMessage = message;
     setMessage("");
@@ -345,7 +362,6 @@ export default function Home() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="logo">
-            <span className="logo-icon">🗃️</span>
             <h1>SQL Agent</h1>
           </div>
         </div>
@@ -381,7 +397,12 @@ export default function Home() {
         )}
 
         {/* Sidebar dynamic list */}
-        {(showUpload ? uploadedFiles.length > 0 : filteredConversations.length > 0) && (
+        {isInitialLoading ? (
+          <div className="sidebar-loading" role="status">
+            <span className="loading-spinner" aria-hidden="true"></span>
+            <span>Loading history...</span>
+          </div>
+        ) : (showUpload ? uploadedFiles.length > 0 : filteredConversations.length > 0) && (
           <div className="query-history">
             <h3>{showUpload ? "📁 Your Uploaded Files" : "📜 Past Conversations"}</h3>
             <div className="history-list">
@@ -391,6 +412,7 @@ export default function Home() {
                     key={file.fileId} 
                     className={`history-item ${dataset === file.fileId ? "active" : ""}`} 
                     onClick={() => handleLoadFile(file)}
+                    disabled={isConversationLoading}
                     title={file.fileName}
                   >
                     <span className="history-q">
@@ -407,6 +429,7 @@ export default function Home() {
                     key={conv._id} 
                     className={`history-item ${conversationId === conv._id ? "active" : ""}`} 
                     onClick={() => loadConversation(conv._id)}
+                    disabled={isConversationLoading}
                     title={conv.title || "New Conversation"}
                   >
                     <span className="history-q">
@@ -455,14 +478,12 @@ export default function Home() {
             </span>
             <div className="user-menu-container">
               <button className="user-menu-button" onClick={() => setShowUserMenu(!showUserMenu)}>
-                <span className="user-avatar">👤</span>
                 <span className="user-name">{user?.name || "User"}</span>
                 <span className="dropdown-arrow">▼</span>
               </button>
               {showUserMenu && (
                 <div className="user-dropdown">
                   <div className="dropdown-header">
-                    <span className="user-avatar-large">👤</span>
                     <div className="user-info">
                       <span className="user-name-large">{user?.name || "User"}</span>
                       <span className="user-email">{user?.email || ""}</span>
@@ -470,15 +491,21 @@ export default function Home() {
                   </div>
                   <div className="dropdown-divider"></div>
                   <button className="dropdown-item" onClick={() => navigate("/profile")}><span>⚙️</span> Profile Settings</button>
-                  <button className="dropdown-item logout-button" onClick={handleLogout}><span>🚪</span> Logout</button>
+                  <button className="dropdown-item logout-button" onClick={handleLogout} disabled={isLoggingOut}><span>🚪</span> {isLoggingOut ? "Logging out..." : "Logout"}</button>
                 </div>
               )}
             </div>
           </div>
         </header>
 
-        <div className="chat-container">
-          {showUpload && !uploadInfo && chat.length === 0 ? (
+        <div className="chat-container" aria-busy={isInitialLoading || isConversationLoading}>
+          {isConversationLoading ? (
+            <div className="content-loading" role="status">
+              <span className="loading-spinner" aria-hidden="true"></span>
+              <p>Loading conversation...</p>
+            </div>
+          ) : (
+          showUpload && !uploadInfo && chat.length === 0 ? (
             /* File Upload Zone */
             <div className="upload-zone-wrapper">
               <div className={`upload-zone ${dragOver ? "drag-over" : ""}`} onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onClick={() => fileInputRef.current?.click()}>
@@ -551,7 +578,11 @@ export default function Home() {
                   <div className="message-avatar">🤖</div>
                   <div className="message-content">
                     <span className="message-sender">SQL Agent</span>
-                    <div className="typing-indicator">
+                    <div className="loading-message" role="status" aria-live="polite">
+                      <span className="loading-spinner" aria-hidden="true"></span>
+                      <span>Running your query...</span>
+                    </div>
+                    <div className="typing-indicator" aria-hidden="true">
                       <span></span><span></span><span></span>
                     </div>
                   </div>
@@ -559,7 +590,7 @@ export default function Home() {
               )}
               <div ref={chatEndRef} />
             </div>
-          )}
+          ))}
         </div>
 
         {/* Input */}
@@ -574,7 +605,9 @@ export default function Home() {
                 disabled={isLoading}
               />
               <button onClick={handleSend} disabled={isLoading || !message.trim()} className="send-button">
-                {isLoading ? "⏳" : "Send →"}
+                {isLoading ? (
+                  <><span className="button-spinner" aria-hidden="true"></span> Running...</>
+                ) : "Send →"}
               </button>
             </div>
           </div>
